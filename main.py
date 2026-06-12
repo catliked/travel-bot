@@ -64,7 +64,7 @@ def stamp_logo(image_bytes: bytes) -> bytes:
     logo = Image.open(LOGO_PATH).convert("RGBA")
 
     # Resize logo to 15% of poster width
-    target_w = int(poster_w * 0.15)
+    target_w = int(poster_w * 0.40)
     ratio = target_w / logo.width
     target_h = int(logo.height * ratio)
     logo = logo.resize((target_w, target_h), Image.LANCZOS)
@@ -94,11 +94,8 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["data"] = data
     context.user_data["pdf_enrichment"] = None
 
-    # Send WhatsApp caption
-    await update.message.reply_text(
-        f"✅ *WhatsApp Caption:*\n\n{data['whatsapp_caption']}",
-        parse_mode="Markdown"
-    )
+    # Store caption for sending after poster stamp
+    context.user_data["whatsapp_caption"] = data["whatsapp_caption"]
 
     # If Drive links found, ask about PDF
     if data.get("drive_links"):
@@ -182,10 +179,12 @@ async def handle_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         stamped = stamp_logo(bytes(image_bytes))
 
-        await update.message.reply_photo(
-            photo=BytesIO(stamped),
-            caption="✅ Poster siap! Forward ke WhatsApp Community 🚀"
-        )
+        # Send poster
+        await update.message.reply_photo(photo=BytesIO(stamped))
+        # Send caption right after
+        caption = context.user_data.get("whatsapp_caption", "")
+        if caption:
+            await update.message.reply_text(caption)
 
     except Exception as e:
         await update.message.reply_text(f"❌ Stamping failed: {e}")
