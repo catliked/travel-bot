@@ -2,6 +2,7 @@
 promo_parser.py
 Detects Google Drive links from raw promo text.
 Caption is kept identical to input + phone number appended.
+Poster text has provider CTA lines stripped.
 """
 
 import re
@@ -19,8 +20,9 @@ def convert_drive_link(url: str) -> str | None:
 def parse_promo(raw_text: str) -> dict:
     """
     Extract Drive links from raw promo text.
-    Returns dict with:
+    Returns:
     - whatsapp_caption: original text + phone number
+    - poster_text: cleaned text without provider CTA lines
     - drive_links: list of {original_url, download_url} dicts
     """
     # Find all Google Drive links
@@ -36,11 +38,19 @@ def parse_promo(raw_text: str) -> dict:
                 "download_url": download_url
             })
 
-    # WhatsApp caption = raw text as-is + phone number
+    # WhatsApp caption = raw text as-is + your phone number
     caption = raw_text.strip() + "\n📞 WA 0817771667"
+
+    # Clean text for poster prompt — strip provider's generic CTA lines
+    cleaned = re.sub(r"(?i)hubungi travel agent.*", "", raw_text)
+    cleaned = re.sub(r"(?i)segera hubungi.*", "", cleaned)
+    cleaned = re.sub(r"(?i)📩.*sebelum kehabisan.*", "", cleaned)
+    cleaned = re.sub(r"(?i)hubungi.*agen.*sekarang.*", "", cleaned)
+    cleaned = cleaned.strip()
 
     return {
         "whatsapp_caption": caption,
+        "poster_text": cleaned,
         "drive_links": drive_links,
     }
 
@@ -53,8 +63,10 @@ if __name__ == "__main__":
 💰 START FROM IDR 6.990.000
 Link Itinerary
 https://drive.google.com/file/d/1QGgZpxx11MTSQTDGeMVCDfOOhCKTNa07/view?usp=drive_link
-🔥 Seat terbatas!"""
+🔥 Seat terbatas!
+📩 Hubungi travel agent langganan Anda sekarang sebelum kehabisan seat."""
 
     result = parse_promo(sample)
     print("Caption:\n", result["whatsapp_caption"])
+    print("\nPoster text:\n", result["poster_text"])
     print("\nDrive links:", result["drive_links"])
