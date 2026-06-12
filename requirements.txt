@@ -1,0 +1,6 @@
+openai
+python-telegram-bot
+Pillow
+pdfplumber
+requests
+python-dotenv
